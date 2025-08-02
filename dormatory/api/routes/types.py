@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from dormatory.api.dependencies import get_db
-from dormatory.models.dormatory_model import Type
+from dormatory.models.dormatory_model import Type, Object
 
 router = APIRouter(tags=["types"])
 
@@ -28,6 +28,18 @@ class TypeUpdate(BaseModel):
 class TypeResponse(BaseModel):
     id: UUID
     type_name: str
+
+    class Config:
+        from_attributes = True
+
+
+class ObjectResponse(BaseModel):
+    id: int
+    name: str
+    version: int
+    type_id: UUID
+    created_on: str
+    created_by: str
 
     class Config:
         from_attributes = True
@@ -184,7 +196,7 @@ async def create_types_bulk(type_data: List[TypeCreate], db: Session = Depends(g
     return [TypeResponse.from_orm(type_obj) for type_obj in created_types]
 
 
-@router.get("/{type_id}/objects")
+@router.get("/{type_id}/objects", response_model=List[ObjectResponse])
 async def get_objects_by_type(type_id: UUID, db: Session = Depends(get_db)):
     """
     Get all objects of a specific type.
@@ -196,5 +208,12 @@ async def get_objects_by_type(type_id: UUID, db: Session = Depends(get_db)):
     Returns:
         List of objects of the specified type
     """
-    # TODO: Implement object retrieval by type
-    raise HTTPException(status_code=500, detail="Not implemented") 
+    # First verify the type exists
+    db_type = db.query(Type).filter(Type.id == type_id).first()
+    if not db_type:
+        raise HTTPException(status_code=404, detail="Type not found")
+    
+    # Get all objects of this type
+    objects = db.query(Object).filter(Object.type_id == type_id).all()
+    
+    return [ObjectResponse.from_orm(obj) for obj in objects] 

@@ -30,6 +30,22 @@ def test_app():
         allow_headers=["*"],
     )
     
+    # Add root and health endpoints
+    @app.get("/")
+    async def root():
+        """Root endpoint with API information."""
+        return {
+            "message": "Welcome to DORMATORY API",
+            "version": "0.1.0",
+            "docs": "/docs",
+            "description": "API for hierarchical data storage using flat tables"
+        }
+
+    @app.get("/health")
+    async def health_check():
+        """Health check endpoint."""
+        return {"status": "healthy", "service": "dormatory-api"}
+    
     # Include routers
     app.include_router(objects.router, prefix="/api/v1/objects", tags=["objects"])
     app.include_router(types.router, prefix="/api/v1/types", tags=["types"])

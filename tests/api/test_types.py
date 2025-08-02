@@ -109,9 +109,24 @@ class TestTypesAPI:
     @pytest.mark.api
     def test_get_objects_by_type(self, client: TestClient):
         """Test retrieving objects by type."""
-        response = client.get("/api/v1/types/00000000-0000-0000-0000-000000000001/objects")
-        # Not implemented yet
-        assert response.status_code == 500
+        # First create a type
+        type_data = {"type_name": "test_type_for_objects"}
+        create_response = client.post("/api/v1/types/", json=type_data)
+        assert create_response.status_code == 200
+        created_type = create_response.json()
+        type_id = created_type["id"]
+        
+        # Test getting objects by type (should return empty list since no objects exist)
+        response = client.get(f"/api/v1/types/{type_id}/objects")
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        # Should be empty since no objects of this type exist yet
+        assert len(data) == 0
+        
+        # Test getting objects by non-existent type
+        response = client.get("/api/v1/types/00000000-0000-0000-0000-000000000000/objects")
+        assert response.status_code == 404
 
     @pytest.mark.api
     def test_create_type_invalid_data(self, client: TestClient):
