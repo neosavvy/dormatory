@@ -162,4 +162,9 @@ cython_debug/
 #  *.iws
 
 # uv
-.uv/ 
+.uv/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3 
