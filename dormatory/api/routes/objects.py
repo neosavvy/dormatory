@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from dormatory.api.dependencies import get_db
-from dormatory.models.dormatory_model import Object, Type
+from dormatory.models.dormatory_model import Object, Type, Link
 
 router = APIRouter(tags=["objects"])
 
@@ -237,10 +237,32 @@ async def get_object_children(object_id: int, db: Session = Depends(get_db)):
         db: Database session
         
     Returns:
-        List of child objects
+        List of child objects with relationship information
     """
-    # TODO: Implement child object retrieval
-    raise HTTPException(status_code=500, detail="Not implemented")
+    # Verify that the object exists
+    db_object = db.query(Object).filter(Object.id == object_id).first()
+    if not db_object:
+        raise HTTPException(status_code=404, detail="Object not found")
+    
+    # Get all links where this object is the parent
+    links = db.query(Link).filter(Link.parent_id == object_id).all()
+    
+    # Get the child objects
+    child_ids = [link.child_id for link in links]
+    children = db.query(Object).filter(Object.id.in_(child_ids)).all()
+    
+    return [
+        {
+            "id": child.id,
+            "name": child.name,
+            "version": child.version,
+            "type_id": str(child.type_id),
+            "created_on": child.created_on,
+            "created_by": child.created_by,
+            "relationship": next(link.r_name for link in links if link.child_id == child.id)
+        }
+        for child in children
+    ]
 
 
 @router.get("/{object_id}/parents")
@@ -253,10 +275,32 @@ async def get_object_parents(object_id: int, db: Session = Depends(get_db)):
         db: Database session
         
     Returns:
-        List of parent objects
+        List of parent objects with relationship information
     """
-    # TODO: Implement parent object retrieval
-    raise HTTPException(status_code=500, detail="Not implemented")
+    # Verify that the object exists
+    db_object = db.query(Object).filter(Object.id == object_id).first()
+    if not db_object:
+        raise HTTPException(status_code=404, detail="Object not found")
+    
+    # Get all links where this object is the child
+    links = db.query(Link).filter(Link.child_id == object_id).all()
+    
+    # Get the parent objects
+    parent_ids = [link.parent_id for link in links]
+    parents = db.query(Object).filter(Object.id.in_(parent_ids)).all()
+    
+    return [
+        {
+            "id": parent.id,
+            "name": parent.name,
+            "version": parent.version,
+            "type_id": str(parent.type_id),
+            "created_on": parent.created_on,
+            "created_by": parent.created_by,
+            "relationship": next(link.r_name for link in links if link.parent_id == parent.id)
+        }
+        for parent in parents
+    ]
 
 
 @router.get("/{object_id}/hierarchy")
@@ -271,8 +315,50 @@ async def get_object_hierarchy(object_id: int, db: Session = Depends(get_db)):
     Returns:
         Complete hierarchy tree
     """
-    # TODO: Implement hierarchy retrieval
-    raise HTTPException(status_code=500, detail="Not implemented")
+    # Verify that the object exists
+    db_object = db.query(Object).filter(Object.id == object_id).first()
+    if not db_object:
+        raise HTTPException(status_code=404, detail="Object not found")
+    
+    def build_hierarchy(obj_id: int, visited: set = None) -> dict:
+        """Recursively build the hierarchy tree."""
+        if visited is None:
+            visited = set()
+        
+        if obj_id in visited:
+            return None  # Prevent circular references
+        
+        visited.add(obj_id)
+        
+        # Get the object
+        obj = db.query(Object).filter(Object.id == obj_id).first()
+        if not obj:
+            return None
+        
+        # Get children
+        child_links = db.query(Link).filter(Link.parent_id == obj_id).all()
+        children = []
+        
+        for link in child_links:
+            child_hierarchy = build_hierarchy(link.child_id, visited.copy())
+            if child_hierarchy:
+                children.append({
+                    "object": child_hierarchy,
+                    "relationship": link.r_name
+                })
+        
+        return {
+            "id": obj.id,
+            "name": obj.name,
+            "version": obj.version,
+            "type_id": str(obj.type_id),
+            "created_on": obj.created_on,
+            "created_by": obj.created_by,
+            "children": children
+        }
+    
+    hierarchy = build_hierarchy(object_id)
+    return hierarchy
 
 
 @router.get("/{object_id}/hierarchy/{depth}")
@@ -288,5 +374,52 @@ async def get_object_hierarchy_with_depth(object_id: int, depth: int, db: Sessio
     Returns:
         Hierarchy tree up to specified depth
     """
-    # TODO: Implement depth-limited hierarchy retrieval
-    raise HTTPException(status_code=500, detail="Not implemented") 
+    if depth < 0:
+        raise HTTPException(status_code=422, detail="Depth must be non-negative")
+    
+    # Verify that the object exists
+    db_object = db.query(Object).filter(Object.id == object_id).first()
+    if not db_object:
+        raise HTTPException(status_code=404, detail="Object not found")
+    
+    def build_hierarchy_with_depth(obj_id: int, current_depth: int, visited: set = None) -> dict:
+        """Recursively build the hierarchy tree up to specified depth."""
+        if visited is None:
+            visited = set()
+        
+        if obj_id in visited or current_depth > depth:
+            return None  # Prevent circular references or exceed depth limit
+        
+        visited.add(obj_id)
+        
+        # Get the object
+        obj = db.query(Object).filter(Object.id == obj_id).first()
+        if not obj:
+            return None
+        
+        # Get children if we haven't reached the depth limit
+        children = []
+        if current_depth < depth:
+            child_links = db.query(Link).filter(Link.parent_id == obj_id).all()
+            
+            for link in child_links:
+                child_hierarchy = build_hierarchy_with_depth(link.child_id, current_depth + 1, visited.copy())
+                if child_hierarchy:
+                    children.append({
+                        "object": child_hierarchy,
+                        "relationship": link.r_name
+                    })
+        
+        return {
+            "id": obj.id,
+            "name": obj.name,
+            "version": obj.version,
+            "type_id": str(obj.type_id),
+            "created_on": obj.created_on,
+            "created_by": obj.created_by,
+            "children": children,
+            "depth": current_depth
+        }
+    
+    hierarchy = build_hierarchy_with_depth(object_id, 0)
+    return hierarchy 

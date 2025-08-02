@@ -199,30 +199,225 @@ class TestObjectsAPI:
     @pytest.mark.api
     def test_get_object_children(self, client: TestClient):
         """Test retrieving children of an object."""
-        response = client.get("/api/v1/objects/1/children")
-        # Not implemented yet
-        assert response.status_code == 500
+        # Create test data using the API
+        type_data = {"type_name": "test_type"}
+        type_response = client.post("/api/v1/types/", json=type_data)
+        assert type_response.status_code == 200
+        type_result = type_response.json()
+        
+        # Create parent object
+        parent_data = {
+            "name": "parent_object",
+            "version": 1,
+            "type_id": type_result["id"],
+            "created_on": "2024-01-01T00:00:00",
+            "created_by": "test_user"
+        }
+        parent_response = client.post("/api/v1/objects/", json=parent_data)
+        assert parent_response.status_code == 200
+        parent_result = parent_response.json()
+        
+        # Create child object
+        child_data = {
+            "name": "child_object",
+            "version": 1,
+            "type_id": type_result["id"],
+            "created_on": "2024-01-01T00:00:00",
+            "created_by": "test_user"
+        }
+        child_response = client.post("/api/v1/objects/", json=child_data)
+        assert child_response.status_code == 200
+        child_result = child_response.json()
+        
+        # Create link between parent and child
+        link_data = {
+            "parent_id": parent_result["id"],
+            "parent_type": "test_type",
+            "child_type": "test_type",
+            "r_name": "contains",
+            "child_id": child_result["id"]
+        }
+        link_response = client.post("/api/v1/links/", json=link_data)
+        assert link_response.status_code == 200
+        
+        # Test getting children
+        response = client.get(f"/api/v1/objects/{parent_result['id']}/children")
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        assert len(data) == 1
+        assert data[0]["id"] == child_result["id"]
+        assert data[0]["name"] == "child_object"
+        assert data[0]["relationship"] == "contains"
 
     @pytest.mark.api
     def test_get_object_parents(self, client: TestClient):
         """Test retrieving parents of an object."""
-        response = client.get("/api/v1/objects/1/parents")
-        # Not implemented yet
-        assert response.status_code == 500
+        # Create test data using the API
+        type_data = {"type_name": "test_type"}
+        type_response = client.post("/api/v1/types/", json=type_data)
+        assert type_response.status_code == 200
+        type_result = type_response.json()
+        
+        # Create parent object
+        parent_data = {
+            "name": "parent_object",
+            "version": 1,
+            "type_id": type_result["id"],
+            "created_on": "2024-01-01T00:00:00",
+            "created_by": "test_user"
+        }
+        parent_response = client.post("/api/v1/objects/", json=parent_data)
+        assert parent_response.status_code == 200
+        parent_result = parent_response.json()
+        
+        # Create child object
+        child_data = {
+            "name": "child_object",
+            "version": 1,
+            "type_id": type_result["id"],
+            "created_on": "2024-01-01T00:00:00",
+            "created_by": "test_user"
+        }
+        child_response = client.post("/api/v1/objects/", json=child_data)
+        assert child_response.status_code == 200
+        child_result = child_response.json()
+        
+        # Create link between parent and child
+        link_data = {
+            "parent_id": parent_result["id"],
+            "parent_type": "test_type",
+            "child_type": "test_type",
+            "r_name": "contains",
+            "child_id": child_result["id"]
+        }
+        link_response = client.post("/api/v1/links/", json=link_data)
+        assert link_response.status_code == 200
+        
+        # Test getting parents
+        response = client.get(f"/api/v1/objects/{child_result['id']}/parents")
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        assert len(data) == 1
+        assert data[0]["id"] == parent_result["id"]
+        assert data[0]["name"] == "parent_object"
+        assert data[0]["relationship"] == "contains"
 
     @pytest.mark.api
     def test_get_object_hierarchy(self, client: TestClient):
         """Test retrieving complete hierarchy for an object."""
-        response = client.get("/api/v1/objects/1/hierarchy")
-        # Not implemented yet
-        assert response.status_code == 500
+        # Create test data using the API
+        type_data = {"type_name": "test_type"}
+        type_response = client.post("/api/v1/types/", json=type_data)
+        assert type_response.status_code == 200
+        type_result = type_response.json()
+        
+        # Create objects for hierarchy
+        root_data = {
+            "name": "root_object",
+            "version": 1,
+            "type_id": type_result["id"],
+            "created_on": "2024-01-01T00:00:00",
+            "created_by": "test_user"
+        }
+        root_response = client.post("/api/v1/objects/", json=root_data)
+        assert root_response.status_code == 200
+        root_result = root_response.json()
+        
+        child_data = {
+            "name": "child_object",
+            "version": 1,
+            "type_id": type_result["id"],
+            "created_on": "2024-01-01T00:00:00",
+            "created_by": "test_user"
+        }
+        child_response = client.post("/api/v1/objects/", json=child_data)
+        assert child_response.status_code == 200
+        child_result = child_response.json()
+        
+        # Create link between root and child
+        link_data = {
+            "parent_id": root_result["id"],
+            "parent_type": "test_type",
+            "child_type": "test_type",
+            "r_name": "contains",
+            "child_id": child_result["id"]
+        }
+        link_response = client.post("/api/v1/links/", json=link_data)
+        assert link_response.status_code == 200
+        
+        # Test getting hierarchy
+        response = client.get(f"/api/v1/objects/{root_result['id']}/hierarchy")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == root_result["id"]
+        assert data["name"] == "root_object"
+        assert "children" in data
+        assert len(data["children"]) == 1
+        assert data["children"][0]["relationship"] == "contains"
+        assert data["children"][0]["object"]["id"] == child_result["id"]
 
     @pytest.mark.api
     def test_get_object_hierarchy_with_depth(self, client: TestClient):
         """Test retrieving hierarchy for an object up to specific depth."""
-        response = client.get("/api/v1/objects/1/hierarchy/3")
-        # Not implemented yet
-        assert response.status_code == 500
+        # Create test data using the API
+        type_data = {"type_name": "test_type"}
+        type_response = client.post("/api/v1/types/", json=type_data)
+        assert type_response.status_code == 200
+        type_result = type_response.json()
+        
+        # Create objects for hierarchy
+        root_data = {
+            "name": "root_object",
+            "version": 1,
+            "type_id": type_result["id"],
+            "created_on": "2024-01-01T00:00:00",
+            "created_by": "test_user"
+        }
+        root_response = client.post("/api/v1/objects/", json=root_data)
+        assert root_response.status_code == 200
+        root_result = root_response.json()
+        
+        child_data = {
+            "name": "child_object",
+            "version": 1,
+            "type_id": type_result["id"],
+            "created_on": "2024-01-01T00:00:00",
+            "created_by": "test_user"
+        }
+        child_response = client.post("/api/v1/objects/", json=child_data)
+        assert child_response.status_code == 200
+        child_result = child_response.json()
+        
+        # Create link between root and child
+        link_data = {
+            "parent_id": root_result["id"],
+            "parent_type": "test_type",
+            "child_type": "test_type",
+            "r_name": "contains",
+            "child_id": child_result["id"]
+        }
+        link_response = client.post("/api/v1/links/", json=link_data)
+        assert link_response.status_code == 200
+        
+        # Test getting hierarchy with depth 0 (should only return root)
+        response = client.get(f"/api/v1/objects/{root_result['id']}/hierarchy/0")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == root_result["id"]
+        assert data["depth"] == 0
+        assert len(data["children"]) == 0
+        
+        # Test getting hierarchy with depth 1 (should return root and children)
+        response = client.get(f"/api/v1/objects/{root_result['id']}/hierarchy/1")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == root_result["id"]
+        assert data["depth"] == 0
+        assert len(data["children"]) == 1
+        assert data["children"][0]["object"]["id"] == child_result["id"]
+        assert data["children"][0]["object"]["depth"] == 1
 
     @pytest.mark.api
     def test_create_object_invalid_data(self, client: TestClient):
