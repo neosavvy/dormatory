@@ -1,14 +1,50 @@
 [project]
 name = "dormatory"
 version = "0.1.0"
-description = "A Python library for storing structured hierarchical data using a flat set of tables"
-readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-    "fastapi>=0.116.1",
-    "httpx>=0.28.1",
-    "pytest>=8.4.1",
-    "pytest-asyncio>=1.1.0",
-    "sqlalchemy>=2.0.42",
-    "uvicorn>=0.35.0",
+description = "A Python project for storing structured hierarchical data using a flat set of tables"
+authors = [
+    {name = "Your Name", email = "your.email@example.com"},
 ]
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "httpx>=0.25.0",
+    "pytest-cov>=4.1.0",
+]
+requires-python = ">=3.8"
+readme = "README.md"
+license = {text = "MIT"}
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "flake8",
+    "mypy",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["dormatory"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--disable-warnings",
+]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests", 
+    "api: API tests",
+    "slow: Slow running tests",
+]
+asyncio_mode = "auto"

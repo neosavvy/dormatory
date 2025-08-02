@@ -5,7 +5,7 @@ This module defines the core models for storing structured hierarchical data
 using a flat set of tables as shown in the ERD.
 """
 
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Optional, List
 from uuid import UUID, uuid4
 
@@ -13,8 +13,7 @@ from sqlalchemy import (
     Column, Integer, String, Text, DateTime, ForeignKey, 
     create_engine, MetaData
 )
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker, Session
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker, Session
 from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 
 # Create declarative base
@@ -137,7 +136,7 @@ class Versioning(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     object_id = Column(Integer, ForeignKey("object.id"), nullable=False)
     version = Column(String, nullable=False)  # Version string/tag
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
     
     # Relationships
     object = relationship("Object", back_populates="versioning_records")
