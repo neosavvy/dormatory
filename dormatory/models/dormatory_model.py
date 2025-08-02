@@ -169,19 +169,18 @@ class Attributes(Base):
 
 
 # Database session management
-def create_engine_and_session(database_url: str = "sqlite:///dormatory.db"):
+def create_engine_and_session(database_url: str = None):
     """
     Create SQLAlchemy engine and session factory.
     
     Args:
-        database_url: Database connection URL
+        database_url: Database connection URL. If None, uses environment or default.
         
     Returns:
         Tuple of (engine, SessionLocal)
     """
-    engine = create_engine(database_url, echo=True)
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    return engine, SessionLocal
+    from .database_config import create_engine_and_session as create_engine_and_session_config
+    return create_engine_and_session_config(database_url)
 
 
 def create_tables(engine):

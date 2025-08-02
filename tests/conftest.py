@@ -3,6 +3,8 @@ Pytest configuration and fixtures for DORMATORY tests.
 """
 
 import pytest
+import tempfile
+import os
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -35,6 +37,22 @@ def test_app():
         allow_headers=["*"],
     )
     
+    # Add root and health endpoints
+    @app.get("/")
+    async def root():
+        """Root endpoint with API information."""
+        return {
+            "message": "Welcome to DORMATORY API",
+            "version": "0.1.0",
+            "docs": "/docs",
+            "description": "API for hierarchical data storage using flat tables"
+        }
+
+    @app.get("/health")
+    async def health_check():
+        """Health check endpoint."""
+        return {"status": "healthy", "service": "dormatory-api"}
+    
     # Include routers
     app.include_router(objects.router, prefix="/api/v1/objects", tags=["objects"])
     app.include_router(types.router, prefix="/api/v1/types", tags=["types"])
@@ -55,8 +73,12 @@ def client(test_app):
 @pytest.fixture
 def test_db():
     """Create a test database."""
-    # Use in-memory SQLite for testing
-    engine = create_engine("sqlite:///:memory:", echo=False)
+    # Use file-based SQLite for testing to avoid threading issues
+    db_file = tempfile.NamedTemporaryFile(delete=False, suffix=".db")
+    db_path = db_file.name
+    db_file.close()
+    
+    engine = create_engine(f"sqlite:///{db_path}", echo=False)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     
     # Create tables
@@ -69,19 +91,29 @@ def test_db():
     finally:
         session.close()
         engine.dispose()
+        # Clean up the temporary file
+        try:
+            os.unlink(db_path)
+        except:
+            pass
 
 
 @pytest.fixture(autouse=True)
 def setup_test_db(test_app):
     """Setup test database for each test."""
-    # Create a new in-memory database for each test
-    engine = create_engine("sqlite:///:memory:", echo=False)
+    # Use file-based SQLite for testing to avoid threading issues
+    db_file = tempfile.NamedTemporaryFile(delete=False, suffix=".db")
+    db_path = db_file.name
+    db_file.close()
+    
+    engine = create_engine(f"sqlite:///{db_path}", echo=False)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     
     # Create tables
     Base.metadata.create_all(bind=engine)
     
     def override_get_db() -> Generator[Session, None, None]:
+        # Create a new session using the same engine
         db = TestingSessionLocal()
         try:
             yield db
@@ -96,6 +128,11 @@ def setup_test_db(test_app):
     # Clean up
     test_app.dependency_overrides.clear()
     engine.dispose()
+    # Clean up the temporary file
+    try:
+        os.unlink(db_path)
+    except:
+        pass
 
 
 @pytest.fixture
