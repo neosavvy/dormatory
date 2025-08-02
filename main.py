@@ -18,7 +18,10 @@ def main():
     print(f"  - {Versioning.__name__}: Version history")
     print(f"  - {Attributes.__name__}: Flexible key-value attributes")
     print()
-    print("Run 'python examples/basic_usage.py' to see a working example!")
+    print("Available Commands:")
+    print("  - Run example: python examples/basic_usage.py")
+    print("  - Start API server: python server.py")
+    print("  - View API docs: http://localhost:8000/docs")
 
 
 if __name__ == "__main__":
