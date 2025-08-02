@@ -168,3 +168,5 @@ cython_debug/
 *.db
 *.sqlite
 *.sqlite3 
+
+.DS_Storemake
