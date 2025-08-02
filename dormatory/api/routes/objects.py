@@ -8,7 +8,7 @@ from typing import List, Optional
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from dormatory.api.dependencies import get_db
@@ -16,9 +16,8 @@ from dormatory.models.dormatory_model import Object, Type
 
 router = APIRouter(tags=["objects"])
 
-
 class ObjectCreate(BaseModel):
-    name: str
+    name: str = Field(..., min_length=1, description="Object name (cannot be empty)")
     version: Optional[int] = 1
     type_id: UUID
     created_on: str

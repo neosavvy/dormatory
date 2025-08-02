@@ -24,12 +24,20 @@ class TestTypesAPI:
     @pytest.mark.api
     def test_get_type_by_id(self, client: TestClient):
         """Test retrieving a type by ID."""
-        response = client.get("/api/v1/types/00000000-0000-0000-0000-000000000001")
-        # Now implemented with stub response
+        # First create a type
+        type_data = {"type_name": "test_type_for_get"}
+        create_response = client.post("/api/v1/types/", json=type_data)
+        assert create_response.status_code == 200
+        created_type = create_response.json()
+        type_id = created_type["id"]
+        
+        # Now get the type by ID
+        response = client.get(f"/api/v1/types/{type_id}")
         assert response.status_code == 200
         data = response.json()
         assert "id" in data
         assert "type_name" in data
+        assert data["id"] == type_id
 
     @pytest.mark.api
     def test_get_all_types(self, client: TestClient):
@@ -55,19 +63,34 @@ class TestTypesAPI:
     @pytest.mark.api
     def test_update_type(self, client: TestClient):
         """Test updating an existing type."""
+        # First create a type
+        type_data = {"type_name": "test_type_for_update"}
+        create_response = client.post("/api/v1/types/", json=type_data)
+        assert create_response.status_code == 200
+        created_type = create_response.json()
+        type_id = created_type["id"]
+        
+        # Now update the type
         update_data = {"type_name": "updated_type"}
-        response = client.put("/api/v1/types/00000000-0000-0000-0000-000000000001", json=update_data)
-        # Now implemented with stub response
+        response = client.put(f"/api/v1/types/{type_id}", json=update_data)
         assert response.status_code == 200
         data = response.json()
         assert "id" in data
         assert "type_name" in data
+        assert data["type_name"] == "updated_type"
 
     @pytest.mark.api
     def test_delete_type(self, client: TestClient):
         """Test deleting a type."""
-        response = client.delete("/api/v1/types/00000000-0000-0000-0000-000000000001")
-        # Now implemented with stub response
+        # First create a type
+        type_data = {"type_name": "test_type_for_delete"}
+        create_response = client.post("/api/v1/types/", json=type_data)
+        assert create_response.status_code == 200
+        created_type = create_response.json()
+        type_id = created_type["id"]
+        
+        # Now delete the type
+        response = client.delete(f"/api/v1/types/{type_id}")
         assert response.status_code == 200
         data = response.json()
         assert "message" in data
