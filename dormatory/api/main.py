@@ -8,6 +8,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .routes import objects, types, links, permissions, versioning, attributes
+from .dependencies import engine
+from dormatory.models.dormatory_model import create_tables
 
 # Create FastAPI app
 app = FastAPI(
@@ -26,6 +28,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Create database tables on startup
+@app.on_event("startup")
+async def startup_event():
+    """Create database tables on application startup."""
+    create_tables(engine)
 
 # Include routers
 app.include_router(objects.router, prefix="/api/v1/objects", tags=["objects"])

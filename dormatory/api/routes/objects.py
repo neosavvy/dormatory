@@ -7,8 +7,12 @@ This module provides RESTful API endpoints for managing object entities.
 from typing import List, Optional
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from dormatory.api.dependencies import get_db
+from dormatory.models.dormatory_model import Object, Type
 
 router = APIRouter(tags=["objects"])
 
@@ -35,52 +39,60 @@ class ObjectResponse(BaseModel):
     created_on: str
     created_by: str
 
+    class Config:
+        from_attributes = True
+
 
 @router.post("/", response_model=ObjectResponse)
-async def create_object(object_data: ObjectCreate):
+async def create_object(object_data: ObjectCreate, db: Session = Depends(get_db)):
     """
     Create a new object.
     
     Args:
         object_data: Object creation data
+        db: Database session
         
     Returns:
         Created object data
     """
-    # TODO: Implement object creation
-    return ObjectResponse(
-        id=1,
+    # Verify that the type exists
+    type_obj = db.query(Type).filter(Type.id == object_data.type_id).first()
+    if not type_obj:
+        raise HTTPException(status_code=404, detail="Type not found")
+    
+    # Create the object
+    db_object = Object(
         name=object_data.name,
         version=object_data.version or 1,
         type_id=object_data.type_id,
         created_on=object_data.created_on,
         created_by=object_data.created_by
     )
+    
+    db.add(db_object)
+    db.commit()
+    db.refresh(db_object)
+    
+    return ObjectResponse.from_orm(db_object)
 
 
 @router.get("/{object_id}", response_model=ObjectResponse)
-async def get_object_by_id(object_id: int):
+async def get_object_by_id(object_id: int, db: Session = Depends(get_db)):
     """
     Get an object by its ID.
     
     Args:
         object_id: Object ID
+        db: Database session
         
     Returns:
         Object data
     """
-    # TODO: Implement object retrieval by ID
-    if object_id == 999:  # Simulate not found
+    db_object = db.query(Object).filter(Object.id == object_id).first()
+    if not db_object:
         raise HTTPException(status_code=404, detail="Object not found")
     
-    return ObjectResponse(
-        id=object_id,
-        name="test_object",
-        version=1,
-        type_id=uuid4(),
-        created_on="2024-01-01T00:00:00",
-        created_by="test_user"
-    )
+    return ObjectResponse.from_orm(db_object)
 
 
 @router.get("/", response_model=List[ObjectResponse])
@@ -88,7 +100,8 @@ async def get_all_objects(
     skip: int = 0,
     limit: int = 100,
     name: Optional[str] = None,
-    type_id: Optional[UUID] = None
+    type_id: Optional[UUID] = None,
+    db: Session = Depends(get_db)
 ):
     """
     Get all objects with optional filtering.
@@ -98,99 +111,131 @@ async def get_all_objects(
         limit: Maximum number of records to return
         name: Filter by object name
         type_id: Filter by type ID
+        db: Database session
         
     Returns:
         List of objects
     """
-    # TODO: Implement object listing with filters
-    return [
-        ObjectResponse(
-            id=1,
-            name=name or "test_object",
-            version=1,
-            type_id=type_id or uuid4(),
-            created_on="2024-01-01T00:00:00",
-            created_by="test_user"
-        )
-    ]
+    query = db.query(Object)
+    
+    # Apply filters
+    if name:
+        query = query.filter(Object.name.contains(name))
+    if type_id:
+        query = query.filter(Object.type_id == type_id)
+    
+    # Apply pagination
+    objects = query.offset(skip).limit(limit).all()
+    
+    return [ObjectResponse.from_orm(obj) for obj in objects]
 
 
 @router.put("/{object_id}", response_model=ObjectResponse)
-async def update_object(object_id: int, object_data: ObjectUpdate):
+async def update_object(object_id: int, object_data: ObjectUpdate, db: Session = Depends(get_db)):
     """
     Update an existing object.
     
     Args:
         object_id: Object ID to update
         object_data: Updated object data
+        db: Database session
         
     Returns:
         Updated object data
     """
-    # TODO: Implement object update
-    if object_id == 999:  # Simulate not found
+    db_object = db.query(Object).filter(Object.id == object_id).first()
+    if not db_object:
         raise HTTPException(status_code=404, detail="Object not found")
     
-    return ObjectResponse(
-        id=object_id,
-        name=object_data.name or "updated_object",
-        version=object_data.version or 2,
-        type_id=object_data.type_id or uuid4(),
-        created_on="2024-01-01T00:00:00",
-        created_by="test_user"
-    )
+    # Update fields if provided
+    if object_data.name is not None:
+        db_object.name = object_data.name
+    if object_data.version is not None:
+        db_object.version = object_data.version
+    if object_data.type_id is not None:
+        # Verify that the new type exists
+        type_obj = db.query(Type).filter(Type.id == object_data.type_id).first()
+        if not type_obj:
+            raise HTTPException(status_code=404, detail="Type not found")
+        db_object.type_id = object_data.type_id
+    
+    db.commit()
+    db.refresh(db_object)
+    
+    return ObjectResponse.from_orm(db_object)
 
 
 @router.delete("/{object_id}")
-async def delete_object(object_id: int):
+async def delete_object(object_id: int, db: Session = Depends(get_db)):
     """
     Delete an object.
     
     Args:
         object_id: Object ID to delete
+        db: Database session
         
     Returns:
         Success message
     """
-    # TODO: Implement object deletion
-    if object_id == 999:  # Simulate not found
+    db_object = db.query(Object).filter(Object.id == object_id).first()
+    if not db_object:
         raise HTTPException(status_code=404, detail="Object not found")
+    
+    db.delete(db_object)
+    db.commit()
     
     return {"message": "Object deleted successfully"}
 
 
 @router.post("/bulk", response_model=List[ObjectResponse])
-async def create_objects_bulk(object_data: List[ObjectCreate]):
+async def create_objects_bulk(object_data: List[ObjectCreate], db: Session = Depends(get_db)):
     """
     Create multiple objects in a single operation.
     
     Args:
         object_data: List of object creation data
+        db: Database session
         
     Returns:
         List of created objects
     """
-    # TODO: Implement bulk object creation
-    return [
-        ObjectResponse(
-            id=i + 1,
+    created_objects = []
+    
+    for item in object_data:
+        # Verify that the type exists
+        type_obj = db.query(Type).filter(Type.id == item.type_id).first()
+        if not type_obj:
+            raise HTTPException(status_code=404, detail=f"Type {item.type_id} not found")
+        
+        # Create the object
+        db_object = Object(
             name=item.name,
             version=item.version or 1,
             type_id=item.type_id,
             created_on=item.created_on,
             created_by=item.created_by
         )
-        for i, item in enumerate(object_data)
-    ]
+        
+        db.add(db_object)
+        created_objects.append(db_object)
+    
+    db.commit()
+    
+    # Refresh all objects to get their IDs
+    for obj in created_objects:
+        db.refresh(obj)
+    
+    return [ObjectResponse.from_orm(obj) for obj in created_objects]
 
 
 @router.get("/{object_id}/children")
-async def get_object_children(object_id: int):
+async def get_object_children(object_id: int, db: Session = Depends(get_db)):
     """
     Get all children of an object.
     
     Args:
         object_id: Object ID
+        db: Database session
         
     Returns:
         List of child objects
@@ -200,12 +245,13 @@ async def get_object_children(object_id: int):
 
 
 @router.get("/{object_id}/parents")
-async def get_object_parents(object_id: int):
+async def get_object_parents(object_id: int, db: Session = Depends(get_db)):
     """
     Get all parents of an object.
     
     Args:
         object_id: Object ID
+        db: Database session
         
     Returns:
         List of parent objects
@@ -215,12 +261,13 @@ async def get_object_parents(object_id: int):
 
 
 @router.get("/{object_id}/hierarchy")
-async def get_object_hierarchy(object_id: int):
+async def get_object_hierarchy(object_id: int, db: Session = Depends(get_db)):
     """
     Get the complete hierarchy for an object.
     
     Args:
         object_id: Object ID
+        db: Database session
         
     Returns:
         Complete hierarchy tree
@@ -230,13 +277,14 @@ async def get_object_hierarchy(object_id: int):
 
 
 @router.get("/{object_id}/hierarchy/{depth}")
-async def get_object_hierarchy_with_depth(object_id: int, depth: int):
+async def get_object_hierarchy_with_depth(object_id: int, depth: int, db: Session = Depends(get_db)):
     """
     Get the hierarchy for an object up to a specific depth.
     
     Args:
         object_id: Object ID
         depth: Maximum depth to retrieve
+        db: Database session
         
     Returns:
         Hierarchy tree up to specified depth

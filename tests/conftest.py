@@ -4,17 +4,52 @@ Pytest configuration and fixtures for DORMATORY tests.
 
 import pytest
 from fastapi.testclient import TestClient
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
+from typing import Generator
 
-from dormatory.api.main import app
+from dormatory.api.routes import objects, types, links, permissions, versioning, attributes
+from dormatory.api.dependencies import get_db
 from dormatory.models.dormatory_model import Base
 
 
 @pytest.fixture
-def client():
+def test_app():
+    """Create a test-specific FastAPI app."""
+    app = FastAPI(
+        title="DORMATORY API Test",
+        description="Test API for DORMATORY",
+        version="0.1.0",
+        docs_url="/docs",
+        redoc_url="/redoc"
+    )
+    
+    # Add CORS middleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    
+    # Include routers
+    app.include_router(objects.router, prefix="/api/v1/objects", tags=["objects"])
+    app.include_router(types.router, prefix="/api/v1/types", tags=["types"])
+    app.include_router(links.router, prefix="/api/v1/links", tags=["links"])
+    app.include_router(permissions.router, prefix="/api/v1/permissions", tags=["permissions"])
+    app.include_router(versioning.router, prefix="/api/v1/versioning", tags=["versioning"])
+    app.include_router(attributes.router, prefix="/api/v1/attributes", tags=["attributes"])
+    
+    return app
+
+
+@pytest.fixture
+def client(test_app):
     """Create a test client for the FastAPI application."""
-    return TestClient(app)
+    return TestClient(test_app)
 
 
 @pytest.fixture
@@ -34,6 +69,33 @@ def test_db():
     finally:
         session.close()
         engine.dispose()
+
+
+@pytest.fixture(autouse=True)
+def setup_test_db(test_app):
+    """Setup test database for each test."""
+    # Create a new in-memory database for each test
+    engine = create_engine("sqlite:///:memory:", echo=False)
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    
+    # Create tables
+    Base.metadata.create_all(bind=engine)
+    
+    def override_get_db() -> Generator[Session, None, None]:
+        db = TestingSessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+    
+    # Override the database dependency
+    test_app.dependency_overrides[get_db] = override_get_db
+    
+    yield
+    
+    # Clean up
+    test_app.dependency_overrides.clear()
+    engine.dispose()
 
 
 @pytest.fixture
