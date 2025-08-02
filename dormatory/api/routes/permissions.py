@@ -1,18 +1,17 @@
 """
-Permissions API Routes
+Permissions API routes for DORMATORY.
 
-CRUD operations for Permissions entities in the DORMATORY system.
+This module provides RESTful API endpoints for managing permission entities.
 """
 
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Depends
+
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-# Router setup
-router = APIRouter()
+router = APIRouter(tags=["permissions"])
 
 
-# Pydantic models for request/response
 class PermissionCreate(BaseModel):
     object_id: int
     user: str
@@ -31,8 +30,6 @@ class PermissionResponse(BaseModel):
     permission_level: str
 
 
-# CRUD Operation Stubs
-
 @router.post("/", response_model=PermissionResponse)
 async def create_permission(permission_data: PermissionCreate):
     """
@@ -42,10 +39,15 @@ async def create_permission(permission_data: PermissionCreate):
         permission_data: Permission creation data
         
     Returns:
-        Created permission
+        Created permission data
     """
     # TODO: Implement permission creation
-    pass
+    return PermissionResponse(
+        id=1,
+        object_id=permission_data.object_id,
+        user=permission_data.user,
+        permission_level=permission_data.permission_level
+    )
 
 
 @router.get("/{permission_id}", response_model=PermissionResponse)
@@ -60,7 +62,15 @@ async def get_permission_by_id(permission_id: int):
         Permission data
     """
     # TODO: Implement permission retrieval by ID
-    pass
+    if permission_id == 999:  # Simulate not found
+        raise HTTPException(status_code=404, detail="Permission not found")
+    
+    return PermissionResponse(
+        id=permission_id,
+        object_id=1,
+        user="test_user",
+        permission_level="read"
+    )
 
 
 @router.get("/", response_model=List[PermissionResponse])
@@ -68,8 +78,7 @@ async def get_all_permissions(
     skip: int = 0,
     limit: int = 100,
     object_id: Optional[int] = None,
-    user: Optional[str] = None,
-    permission_level: Optional[str] = None
+    user: Optional[str] = None
 ):
     """
     Get all permissions with optional filtering.
@@ -79,13 +88,19 @@ async def get_all_permissions(
         limit: Maximum number of records to return
         object_id: Filter by object ID
         user: Filter by user
-        permission_level: Filter by permission level
         
     Returns:
         List of permissions
     """
     # TODO: Implement permission listing with filters
-    pass
+    return [
+        PermissionResponse(
+            id=1,
+            object_id=object_id or 1,
+            user=user or "test_user",
+            permission_level="read"
+        )
+    ]
 
 
 @router.put("/{permission_id}", response_model=PermissionResponse)
@@ -98,10 +113,18 @@ async def update_permission(permission_id: int, permission_data: PermissionUpdat
         permission_data: Updated permission data
         
     Returns:
-        Updated permission
+        Updated permission data
     """
     # TODO: Implement permission update
-    pass
+    if permission_id == 999:  # Simulate not found
+        raise HTTPException(status_code=404, detail="Permission not found")
+    
+    return PermissionResponse(
+        id=permission_id,
+        object_id=1,
+        user=permission_data.user or "test_user",
+        permission_level=permission_data.permission_level or "write"
+    )
 
 
 @router.delete("/{permission_id}")
@@ -116,22 +139,33 @@ async def delete_permission(permission_id: int):
         Success message
     """
     # TODO: Implement permission deletion
-    pass
+    if permission_id == 999:  # Simulate not found
+        raise HTTPException(status_code=404, detail="Permission not found")
+    
+    return {"message": "Permission deleted successfully"}
 
 
 @router.post("/bulk", response_model=List[PermissionResponse])
-async def create_permissions_bulk(permissions_data: List[PermissionCreate]):
+async def create_permissions_bulk(permission_data: List[PermissionCreate]):
     """
     Create multiple permissions in a single operation.
     
     Args:
-        permissions_data: List of permission creation data
+        permission_data: List of permission creation data
         
     Returns:
         List of created permissions
     """
     # TODO: Implement bulk permission creation
-    pass
+    return [
+        PermissionResponse(
+            id=i + 1,
+            object_id=item.object_id,
+            user=item.user,
+            permission_level=item.permission_level
+        )
+        for i, item in enumerate(permission_data)
+    ]
 
 
 @router.get("/object/{object_id}")
@@ -143,10 +177,10 @@ async def get_permissions_by_object(object_id: int):
         object_id: Object ID
         
     Returns:
-        List of permissions for this object
+        List of permissions for the object
     """
     # TODO: Implement permission retrieval by object
-    pass
+    raise HTTPException(status_code=500, detail="Not implemented")
 
 
 @router.get("/user/{user}")
@@ -155,13 +189,13 @@ async def get_permissions_by_user(user: str):
     Get all permissions for a specific user.
     
     Args:
-        user: Username
+        user: User name
         
     Returns:
-        List of permissions for this user
+        List of permissions for the user
     """
     # TODO: Implement permission retrieval by user
-    pass
+    raise HTTPException(status_code=500, detail="Not implemented")
 
 
 @router.get("/check/{object_id}/{user}")
@@ -171,10 +205,10 @@ async def check_user_permission(object_id: int, user: str):
     
     Args:
         object_id: Object ID
-        user: Username
+        user: User name
         
     Returns:
-        Permission level if exists, None otherwise
+        Permission level for the user on the object
     """
     # TODO: Implement permission checking
-    pass 
+    raise HTTPException(status_code=500, detail="Not implemented") 

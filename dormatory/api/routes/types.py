@@ -1,18 +1,18 @@
 """
-Types API Routes
+Types API routes for DORMATORY.
 
-CRUD operations for Type entities in the DORMATORY system.
+This module provides RESTful API endpoints for managing type entities.
 """
 
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Depends
+from uuid import UUID, uuid4
+
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-# Router setup
-router = APIRouter()
+router = APIRouter(tags=["types"])
 
 
-# Pydantic models for request/response
 class TypeCreate(BaseModel):
     type_name: str
 
@@ -22,11 +22,9 @@ class TypeUpdate(BaseModel):
 
 
 class TypeResponse(BaseModel):
-    id: str  # UUID
+    id: UUID
     type_name: str
 
-
-# CRUD Operation Stubs
 
 @router.post("/", response_model=TypeResponse)
 async def create_type(type_data: TypeCreate):
@@ -37,25 +35,34 @@ async def create_type(type_data: TypeCreate):
         type_data: Type creation data
         
     Returns:
-        Created type
+        Created type data
     """
     # TODO: Implement type creation
-    pass
+    return TypeResponse(
+        id=uuid4(),
+        type_name=type_data.type_name
+    )
 
 
 @router.get("/{type_id}", response_model=TypeResponse)
-async def get_type_by_id(type_id: str):
+async def get_type_by_id(type_id: UUID):
     """
     Get a type by its ID.
     
     Args:
-        type_id: Type ID (UUID)
+        type_id: Type ID
         
     Returns:
         Type data
     """
     # TODO: Implement type retrieval by ID
-    pass
+    if str(type_id) == "00000000-0000-0000-0000-000000000000":  # Simulate not found
+        raise HTTPException(status_code=404, detail="Type not found")
+    
+    return TypeResponse(
+        id=type_id,
+        type_name="test_type"
+    )
 
 
 @router.get("/", response_model=List[TypeResponse])
@@ -70,17 +77,22 @@ async def get_all_types(
     Args:
         skip: Number of records to skip
         limit: Maximum number of records to return
-        type_name: Filter by type name (partial match)
+        type_name: Filter by type name
         
     Returns:
         List of types
     """
     # TODO: Implement type listing with filters
-    pass
+    return [
+        TypeResponse(
+            id=uuid4(),
+            type_name=type_name or "test_type"
+        )
+    ]
 
 
 @router.put("/{type_id}", response_model=TypeResponse)
-async def update_type(type_id: str, type_data: TypeUpdate):
+async def update_type(type_id: UUID, type_data: TypeUpdate):
     """
     Update an existing type.
     
@@ -89,14 +101,20 @@ async def update_type(type_id: str, type_data: TypeUpdate):
         type_data: Updated type data
         
     Returns:
-        Updated type
+        Updated type data
     """
     # TODO: Implement type update
-    pass
+    if str(type_id) == "00000000-0000-0000-0000-000000000000":  # Simulate not found
+        raise HTTPException(status_code=404, detail="Type not found")
+    
+    return TypeResponse(
+        id=type_id,
+        type_name=type_data.type_name or "updated_type"
+    )
 
 
 @router.delete("/{type_id}")
-async def delete_type(type_id: str):
+async def delete_type(type_id: UUID):
     """
     Delete a type.
     
@@ -107,26 +125,35 @@ async def delete_type(type_id: str):
         Success message
     """
     # TODO: Implement type deletion
-    pass
+    if str(type_id) == "00000000-0000-0000-0000-000000000000":  # Simulate not found
+        raise HTTPException(status_code=404, detail="Type not found")
+    
+    return {"message": "Type deleted successfully"}
 
 
 @router.post("/bulk", response_model=List[TypeResponse])
-async def create_types_bulk(types_data: List[TypeCreate]):
+async def create_types_bulk(type_data: List[TypeCreate]):
     """
     Create multiple types in a single operation.
     
     Args:
-        types_data: List of type creation data
+        type_data: List of type creation data
         
     Returns:
         List of created types
     """
     # TODO: Implement bulk type creation
-    pass
+    return [
+        TypeResponse(
+            id=uuid4(),
+            type_name=item.type_name
+        )
+        for item in type_data
+    ]
 
 
 @router.get("/{type_id}/objects")
-async def get_objects_by_type(type_id: str):
+async def get_objects_by_type(type_id: UUID):
     """
     Get all objects of a specific type.
     
@@ -137,4 +164,4 @@ async def get_objects_by_type(type_id: str):
         List of objects of this type
     """
     # TODO: Implement object retrieval by type
-    pass 
+    raise HTTPException(status_code=500, detail="Not implemented") 

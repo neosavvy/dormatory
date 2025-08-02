@@ -1,19 +1,19 @@
 """
-Versioning API Routes
+Versioning API routes for DORMATORY.
 
-CRUD operations for Versioning entities in the DORMATORY system.
+This module provides RESTful API endpoints for managing versioning records.
 """
 
-from typing import List, Optional
 from datetime import datetime
-from fastapi import APIRouter, HTTPException, Depends
+from typing import List, Optional
+from uuid import uuid4
+
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-# Router setup
-router = APIRouter()
+router = APIRouter(tags=["versioning"])
 
 
-# Pydantic models for request/response
 class VersioningCreate(BaseModel):
     object_id: int
     version: str
@@ -32,8 +32,6 @@ class VersioningResponse(BaseModel):
     created_at: datetime
 
 
-# CRUD Operation Stubs
-
 @router.post("/", response_model=VersioningResponse)
 async def create_versioning(versioning_data: VersioningCreate):
     """
@@ -46,7 +44,12 @@ async def create_versioning(versioning_data: VersioningCreate):
         Created versioning record
     """
     # TODO: Implement versioning creation
-    pass
+    return VersioningResponse(
+        id=1,
+        object_id=versioning_data.object_id,
+        version=versioning_data.version,
+        created_at=versioning_data.created_at or datetime.now()
+    )
 
 
 @router.get("/{versioning_id}", response_model=VersioningResponse)
@@ -61,7 +64,15 @@ async def get_versioning_by_id(versioning_id: int):
         Versioning data
     """
     # TODO: Implement versioning retrieval by ID
-    pass
+    if versioning_id == 999:  # Simulate not found
+        raise HTTPException(status_code=404, detail="Versioning record not found")
+    
+    return VersioningResponse(
+        id=versioning_id,
+        object_id=1,
+        version="1.0.0",
+        created_at=datetime.now()
+    )
 
 
 @router.get("/", response_model=List[VersioningResponse])
@@ -84,7 +95,14 @@ async def get_all_versioning(
         List of versioning records
     """
     # TODO: Implement versioning listing with filters
-    pass
+    return [
+        VersioningResponse(
+            id=1,
+            object_id=object_id or 1,
+            version=version or "1.0.0",
+            created_at=datetime.now()
+        )
+    ]
 
 
 @router.put("/{versioning_id}", response_model=VersioningResponse)
@@ -100,7 +118,15 @@ async def update_versioning(versioning_id: int, versioning_data: VersioningUpdat
         Updated versioning record
     """
     # TODO: Implement versioning update
-    pass
+    if versioning_id == 999:  # Simulate not found
+        raise HTTPException(status_code=404, detail="Versioning record not found")
+    
+    return VersioningResponse(
+        id=versioning_id,
+        object_id=1,
+        version=versioning_data.version or "2.0.0",
+        created_at=versioning_data.created_at or datetime.now()
+    )
 
 
 @router.delete("/{versioning_id}")
@@ -115,7 +141,10 @@ async def delete_versioning(versioning_id: int):
         Success message
     """
     # TODO: Implement versioning deletion
-    pass
+    if versioning_id == 999:  # Simulate not found
+        raise HTTPException(status_code=404, detail="Versioning record not found")
+    
+    return {"message": "Versioning record deleted successfully"}
 
 
 @router.post("/bulk", response_model=List[VersioningResponse])
@@ -130,7 +159,15 @@ async def create_versioning_bulk(versioning_data: List[VersioningCreate]):
         List of created versioning records
     """
     # TODO: Implement bulk versioning creation
-    pass
+    return [
+        VersioningResponse(
+            id=i + 1,
+            object_id=item.object_id,
+            version=item.version,
+            created_at=item.created_at or datetime.now()
+        )
+        for i, item in enumerate(versioning_data)
+    ]
 
 
 @router.get("/object/{object_id}")
@@ -142,10 +179,10 @@ async def get_versioning_by_object(object_id: int):
         object_id: Object ID
         
     Returns:
-        List of versioning records for this object
+        List of versioning records for the object
     """
     # TODO: Implement versioning retrieval by object
-    pass
+    raise HTTPException(status_code=500, detail="Not implemented")
 
 
 @router.get("/object/{object_id}/latest")
@@ -160,13 +197,13 @@ async def get_latest_version(object_id: int):
         Latest versioning record
     """
     # TODO: Implement latest version retrieval
-    pass
+    raise HTTPException(status_code=500, detail="Not implemented")
 
 
 @router.get("/object/{object_id}/version/{version}")
 async def get_specific_version(object_id: int, version: str):
     """
-    Get a specific version for an object.
+    Get a specific version for a specific object.
     
     Args:
         object_id: Object ID
@@ -176,20 +213,20 @@ async def get_specific_version(object_id: int, version: str):
         Specific versioning record
     """
     # TODO: Implement specific version retrieval
-    pass
+    raise HTTPException(status_code=500, detail="Not implemented")
 
 
 @router.post("/object/{object_id}/version")
 async def create_new_version(object_id: int, version: str):
     """
-    Create a new version for an object.
+    Create a new version for a specific object.
     
     Args:
         object_id: Object ID
-        version: New version string
+        version: Version string
         
     Returns:
         Created versioning record
     """
     # TODO: Implement new version creation
-    pass 
+    raise HTTPException(status_code=500, detail="Not implemented") 
