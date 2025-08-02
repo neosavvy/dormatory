@@ -1,0 +1,7 @@
+[project]
+name = "dormatory"
+version = "0.1.0"
+description = "A Python library for storing structured hierarchical data using a flat set of tables"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
