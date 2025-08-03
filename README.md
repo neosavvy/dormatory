@@ -2,6 +2,7 @@
 
 [![Tests](https://github.com/neosavvy/dormatory/workflows/Test%20Suite/badge.svg)](https://github.com/neosavvy/dormatory/actions)
 [![Coverage](https://img.shields.io/badge/coverage-169%20tests%20passing-brightgreen)](https://github.com/neosavvy/dormatory/actions)
+[![Coverage Report](https://img.shields.io/badge/coverage%20report-view%20online-blue)](https://neosavvy.github.io/dormatory/)
 
 A Python library for storing structured hierarchical data using a flat set of tables.
 
