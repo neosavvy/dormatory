@@ -1,4 +1,4 @@
-name: Coverage Pages
+name: Test and Deploy Coverage
 
 on:
   push:
@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  test:
+  test-and-deploy:
     runs-on: ubuntu-latest
     
     steps:
@@ -36,21 +36,33 @@ jobs:
       run: uv sync
     
     - name: Run tests with coverage
-      run: uv run pytest --cov=dormatory --cov-report=xml --cov-report=html --cov-report=term-missing
+      run: uv run pytest --cov=dormatory --cov-report=xml --cov-report=html --cov-report=term-missing -v
+    
+    - name: Display coverage summary
+      run: |
+        echo "=== Coverage Summary ==="
+        uv run coverage report
+        echo "========================"
     
     - name: Setup Pages
       uses: actions/configure-pages@v4
     
-    - name: Copy coverage to docs directory
+    - name: Prepare coverage for Pages
       run: |
         mkdir -p docs
         cp -r htmlcov/* docs/
         echo "# DORMATORY Coverage Report" > docs/index.md
         echo "" >> docs/index.md
-        echo "Coverage report is available at: https://neosavvy.github.io/dormatory/" >> docs/index.md
+        echo "## Coverage Report" >> docs/index.md
         echo "" >> docs/index.md
-        echo "## Files" >> docs/index.md
+        echo "This is the automated coverage report for the DORMATORY project." >> docs/index.md
+        echo "" >> docs/index.md
+        echo "### Files" >> docs/index.md
         echo "- [index.html](index.html) - Main coverage report" >> docs/index.md
+        echo "- [coverage.xml](coverage.xml) - Coverage data" >> docs/index.md
+        echo "" >> docs/index.md
+        echo "### Last Updated" >> docs/index.md
+        echo "Generated on: $(date)" >> docs/index.md
     
     - name: Upload coverage to Pages
       uses: actions/upload-pages-artifact@v3
