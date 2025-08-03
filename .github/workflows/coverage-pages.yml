@@ -41,10 +41,21 @@ jobs:
     - name: Setup Pages
       uses: actions/configure-pages@v4
     
+    - name: Copy coverage to docs directory
+      run: |
+        mkdir -p docs
+        cp -r htmlcov/* docs/
+        echo "# DORMATORY Coverage Report" > docs/index.md
+        echo "" >> docs/index.md
+        echo "Coverage report is available at: https://neosavvy.github.io/dormatory/" >> docs/index.md
+        echo "" >> docs/index.md
+        echo "## Files" >> docs/index.md
+        echo "- [index.html](index.html) - Main coverage report" >> docs/index.md
+    
     - name: Upload coverage to Pages
       uses: actions/upload-pages-artifact@v3
       with:
-        path: htmlcov/
+        path: docs/
     
     - name: Deploy to GitHub Pages
       id: deployment
