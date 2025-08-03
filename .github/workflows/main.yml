@@ -63,6 +63,9 @@ jobs:
         echo "" >> docs/index.md
         echo "### Last Updated" >> docs/index.md
         echo "Generated on: $(date)" >> docs/index.md
+        echo "" >> docs/index.md
+        echo "### Coverage Summary" >> docs/index.md
+        uv run coverage report >> docs/index.md
     
     - name: Upload coverage to Pages
       uses: actions/upload-pages-artifact@v3
