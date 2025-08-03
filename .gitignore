@@ -169,4 +169,7 @@ cython_debug/
 *.sqlite
 *.sqlite3 
 
-.DS_Storemake
+.DS_Store
+
+.idea
+.idea/*

@@ -1,5 +1,8 @@
 # DORMATORY
 
+[![Tests](https://github.com/neosavvy/dormatory/workflows/Test%20Suite/badge.svg)](https://github.com/neosavvy/dormatory/actions)
+[![Coverage](https://img.shields.io/badge/coverage-169%20tests%20passing-brightgreen)](https://github.com/neosavvy/dormatory/actions)
+
 A Python library for storing structured hierarchical data using a flat set of tables.
 
 ## Overview
