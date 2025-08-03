@@ -30,7 +30,7 @@ jobs:
       run: uv run pytest --cov=dormatory --cov-report=xml --cov-report=html --cov-report=term-missing
     
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         file: ./coverage.xml
         flags: unittests
@@ -39,15 +39,14 @@ jobs:
         verbose: true
     
     - name: Upload coverage artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: coverage-report
         path: htmlcov/
         retention-days: 30
     
-    - name: Comment PR with coverage
-      if: github.event_name == 'pull_request'
-      uses: romeovs/lcov-reporter-action@v0.3.0
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        lcov-file: ./coverage.xml 
+    - name: Display coverage summary
+      run: |
+        echo "=== Coverage Summary ==="
+        uv run coverage report
+        echo "========================" 
